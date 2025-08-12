@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f4f4f4 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .calculator {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(60, 60, 120, 0.15);
+            padding: 32px 24px 24px 24px;
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .calc-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2d3a4a;
+            margin-bottom: 18px;
+            letter-spacing: 1px;
+        }
+        .display {
+            width: 100%;
+            font-size: 2.2em;
+            margin-bottom: 18px;
+            padding: 16px 12px;
+            border: none;
+            border-radius: 8px;
+            text-align: right;
+            background: #f3f6fa;
+            color: #222;
+            box-shadow: 0 2px 8px rgba(60, 60, 120, 0.07);
+            outline: none;
+            font-family: 'Consolas', 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(6, 50px);
+            grid-gap: 10px;
+            justify-content: center;
+        }
+        .btn {
+            height: 48px;
+            width: 48px;
+            font-size: 1.1em;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            background: #e3e8f0;
+            color: #2d3a4a;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 2px rgba(60, 60, 120, 0.07);
+            margin: 0;
+            outline: none;
+        }
+        .btn:active {
+            box-shadow: 0 0 0 #000;
+            background: #d1d8e0;
+        }
+        .btn.operator {
+            background: #4f8cff;
+            color: #fff;
+        }
+        .btn.special {
+            background: #f7b731;
+            color: #fff;
+            font-size: 0.95em;
+        }
+        .btn#equals {
+            background: #2ecc71;
+            color: #fff;
+            grid-column: 5 / span 2;
+            width: 106px;
+        }
+        .btn#clear {
+            background: #ff5e57;
+            color: #fff;
+        }
+        .btn:hover {
+            filter: brightness(0.93);
+        }
+        @media (max-width: 500px) {
+            .calculator { width: 99vw; padding: 8px; }
+            .buttons { grid-template-columns: repeat(6, 1fr); }
+            .btn, .display { font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="calc-title">Calculator</div>
+        <input type="text" id="display" class="display" disabled>
+        <div class="buttons" id="buttons">
+            <!-- First row: scientific functions -->
+            <button class="btn special" data-value="sin(">sin</button>
+            <button class="btn special" data-value="cos(">cos</button>
+            <button class="btn special" data-value="tan(">tan</button>
+            <button class="btn special" data-value="log(">log</button>
+            <button class="btn special" data-value="ln(">ln</button>
+            <button class="btn special" data-value="(">(</button>
+            <!-- Second row: more functions and parens -->
+            <button class="btn special" data-value=")">)</button>
+            <button class="btn special" data-value="π">π</button>
+            <button class="btn special" data-value="e">e</button>
+            <button class="btn special" data-value="1/x">1/x</button>
+            <button class="btn special" data-value="%">%</button>
+            <button class="btn special" data-value="√">√</button>
+            <!-- Third row: numbers and operators -->
+            <button class="btn" data-value="7">7</button>
+            <button class="btn" data-value="8">8</button>
+            <button class="btn" data-value="9">9</button>
+            <button class="btn special" data-value="x²">x²</button>
+            <button class="btn operator" data-value="/">÷</button>
+            <button class="btn" id="clear">C</button>
+            <!-- Fourth row -->
+            <button class="btn" data-value="4">4</button>
+            <button class="btn" data-value="5">5</button>
+            <button class="btn" data-value="6">6</button>
+            <button class="btn operator" data-value="*">×</button>
+            <button class="btn operator" data-value="-">−</button>
+            <button class="btn" style="background:transparent; border:none; cursor:default;" disabled></button>
+            <!-- Fifth row -->
+            <button class="btn" data-value="1">1</button>
+            <button class="btn" data-value="2">2</button>
+            <button class="btn" data-value="3">3</button>
+            <button class="btn operator" data-value="+">+</button>
+            <button class="btn" data-value="0">0</button>
+            <button class="btn" data-value=".">.</button>
+            <!-- Sixth row: equals -->
+            <button class="btn" id="equals">=</button>
+
+        </div>
+    </div>
+<script>
+const display = document.getElementById('display');
+const buttons = document.getElementById('buttons');
+
+let currentInput = '';
+let lastResult = '';
+
+function updateDisplay(value) {
+    display.value = value;
+}
+
+// Helper to safely evaluate scientific expressions
+function safeEval(expr) {
+    // Replace constants
+    expr = expr.replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E');
+    // Replace functions
+    expr = expr.replace(/sin\(/g, 'Math.sin(')
+               .replace(/cos\(/g, 'Math.cos(')
+               .replace(/tan\(/g, 'Math.tan(')
+               .replace(/log\(/g, 'Math.log10(')
+               .replace(/ln\(/g, 'Math.log(');
+    // Replace power
+    expr = expr.replace(/(\d+(\.\d+)?)\^(\d+(\.\d+)?)/g, 'Math.pow($1,$3)');
+    // Replace √
+    expr = expr.replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)');
+    // Replace 1/x
+    expr = expr.replace(/1\/x/g, '1/(' + lastResult + ')');
+    // Evaluate
+    return Function('"use strict";return (' + expr + ')')();
+}
+
+buttons.addEventListener('click', function (e) {
+    const target = e.target;
+    if (!target.classList.contains('btn')) return;
+
+    const value = target.dataset.value;
+
+    if (target.id === 'clear') {
+        currentInput = '';
+        lastResult = '';
+        updateDisplay('');
+        return;
+    }
+
+    if (target.id === 'equals') {
+        try {
+            let expression = currentInput.replace(/÷/g, '/').replace(/×/g, '*');
+            let result = safeEval(expression);
+            // Round result for display
+            if (typeof result === 'number') result = +parseFloat(result.toFixed(10));
+            updateDisplay(result);
+            lastResult = result;
+            currentInput = result.toString();
+        } catch {
+            updateDisplay('Error');
+            currentInput = '';
+        }
+        return;
+    }
+
+    // Special functions
+    if (value === '%') {
+        if (currentInput) {
+            let num = parseFloat(currentInput);
+            if (!isNaN(num)) {
+                num = num / 100;
+                updateDisplay(num);
+                currentInput = num.toString();
+            }
+        }
+        return;
+    }
+    if (value === '√') {
+        if (currentInput) {
+            let num = parseFloat(currentInput);
+            if (!isNaN(num)) {
+                num = Math.sqrt(num);
+                updateDisplay(num);
+                currentInput = num.toString();
+            }
+        }
+        return;
+    }
+    if (value === 'x²')
+    {
+        if (currentInput)
+        {
+            let num = parseFloat(currentInput);
+            if (!isNaN(num)) {
+                num = Math.pow(num, 2);
+                updateDisplay(num);
+                currentInput = num.toString();
+            }
+        }
+        return;
+    }
+    if (value === '1/x') {
+        if (currentInput) {
+            let num = parseFloat(currentInput);
+            if (!isNaN(num) && num !== 0) {
+                num = 1 / num;
+                updateDisplay(num);
+                currentInput = num.toString();
+            } else {
+                updateDisplay('Error');
+                currentInput = '';
+            }
+        }
+        return;
+    }
+    if (value === 'π') {
+        currentInput += 'π';
+        updateDisplay(currentInput);
+        return;
+    }
+    if (value === 'e') {
+        currentInput += 'e';
+        updateDisplay(currentInput);
+        return;
+    }
+
+    // For numbers, operators, and scientific functions
+    currentInput += value;
+    updateDisplay(currentInput);
+});
+</script>
+</body>
+</html>
